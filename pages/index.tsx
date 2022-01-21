@@ -6,6 +6,7 @@ import styles from "../styles/Home.module.css";
 import { useSession, signIn, signOut, getSession } from "next-auth/react";
 import MainLayout from "@components/ui/MainLayout";
 import {
+  Alert,
   Button,
   Col,
   Drawer,
@@ -22,8 +23,15 @@ import {
 } from "antd";
 import getConfig from "next/config";
 import axios from "axios";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { EditOutlined } from "@ant-design/icons";
+import { useQuery } from "react-query";
+import { create, fetchAll, getAllRoles, updateById } from "@libs/users/index";
+import { UserStatus } from "@libs/types/user_status";
+import { User } from "@libs/types/user";
+import { ApiListResponse } from "@libs/types/api_list_response";
+import { RoleResponse } from "@libs/types/role_response";
+import { PermissionResponse } from "@libs/types/permissions_response";
 
 export async function getServerSideProps(context: any) {
   const session = await getSession(context);
@@ -42,9 +50,6 @@ export async function getServerSideProps(context: any) {
   };
 }
 
-const { publicRuntimeConfig } = getConfig();
-let webAddress = publicRuntimeConfig.apiUrl;
-
 const format = "HH:mm";
 
 axios.defaults.withCredentials = true;
@@ -59,10 +64,18 @@ export default function Home() {
   const { data: session } = useSession();
 
   const [isDrawerVisible, setDrawer] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [data, setData] = useState([]);
   const [editingRecord, setEditingRecord] = useState(null as any);
   const [isSubmittingForm, setIsSubmittingForm] = useState(false);
+
+  const { data, isLoading, error } = useQuery<ApiListResponse<User>, Error>(
+    "users",
+    fetchAll
+  );
+  const {
+    data: rolesData,
+    isLoading: rolesIsLoading,
+    error: rolesError,
+  } = useQuery<ApiListResponse<RoleResponse>, Error>("roles_list", getAllRoles);
 
   const closeDrawer = () => {
     setEditingRecord(null);
@@ -75,35 +88,61 @@ export default function Home() {
     form.submit();
   };
 
-  const fetchData = async () => {
-    setIsLoading(true);
-    const {
-      data: { data: result },
-    } = await axios.get(`${webAddress}access/users`);
-    setData(result);
-    setIsLoading(false);
+  const editRecord = (record: any) => {
+    setEditingRecord({
+      ...record,
+      roles: record.roles.map((role: any) => role.id),
+    });
+    form.resetFields();
+
+    const formData = {
+      ...record,
+      roles: record.roles.map((role: any) => role.id),
+    };
+
+    form.setFieldsValue(formData);
+    setDrawer(true);
   };
 
   const onFinish = async (values: any) => {
     setIsSubmittingForm(true);
     if (editingRecord) {
-      await axios.put(`${webAddress}/api/news/${editingRecord?.id}`, {
+      await updateById(editingRecord?.id, {
         ...editingRecord,
         ...values,
       });
     } else {
-      await axios.post(`${webAddress}/api/news/`, {
+      let roles = rolesData!.content!.filter((role: RoleResponse) =>
+        values.roles.includes(role.id)
+      );
+      await create({
         ...values,
+        // permissions: [
+        //   [].concat
+        //     .apply(
+        //       [],
+        //       roles.map((role: RoleResponse) => role.permissions)
+        //     )
+        //     .map((perm: PermissionResponse) => perm.id),
+        // ],
       });
     }
     setIsSubmittingForm(false);
     closeDrawer();
-    fetchData();
+    // fetchData();
+  };
+
+  const addRecord = () => {
+    setEditingRecord(null);
+    form.resetFields();
+    setDrawer(true);
   };
 
   useEffect(() => {
-    fetchData();
+    // fetchData();
   });
+
+  console.log(error);
 
   const columns = [
     {
@@ -118,7 +157,7 @@ export default function Home() {
               size="small"
               icon={<EditOutlined />}
               onClick={() => {
-                // editRecord(record);
+                editRecord(record);
               }}
             />
           </Tooltip>
@@ -126,51 +165,51 @@ export default function Home() {
       },
     },
     {
-      title: "Активность",
-      dataIndex: "active",
-      key: "active",
+      title: "Статус",
+      dataIndex: "status",
+      key: "status",
+    },
+    {
+      title: "Логин",
+      dataIndex: "username",
+      key: "username",
+    },
+    {
+      title: "Имя",
+      dataIndex: "firstName",
+      key: "firstName",
+    },
+    {
+      title: "Фамилия",
+      dataIndex: "lastName",
+      key: "lastName",
+    },
+    {
+      title: "Супер пользователь",
+      dataIndex: "isSuperUser",
+      key: "isSuperUser",
       render: (_: any) => {
         return <Switch disabled defaultChecked={_} />;
       },
     },
-    {
-      title: "Сортировка",
-      dataIndex: "sort",
-      key: "sort",
-    },
-    {
-      title: "Заголовок(RU)",
-      dataIndex: "name",
-      key: "name",
-      sorter: {
-        compare: (a: any, b: any) => a.name - b.name,
-      },
-    },
-    {
-      title: "Заголовок(UZ)",
-      dataIndex: "name_uz",
-      key: "name_uz",
-      sorter: {
-        compare: (a: any, b: any) => a.name - b.name,
-      },
-    },
-    {
-      title: "Описание(RU)",
-      dataIndex: "description",
-      key: "description",
-    },
-    {
-      title: "Описание(UZ)",
-      dataIndex: "description_uz",
-      key: "description_uz",
-    },
   ];
+
+  const rows = useMemo(() => {
+    let result: User[] = [];
+    if (!isLoading && !error) {
+      result = data!.content;
+    }
+
+    return result;
+  }, [data, isLoading, error]);
 
   return (
     <MainLayout title="Главная">
       <Drawer
         title={
-          editingRecord ? "Редактировать новость" : "Добавить новую новость"
+          editingRecord
+            ? "Редактировать пользователя"
+            : "Добавить нового пользователя"
         }
         width={720}
         onClose={closeDrawer}
@@ -206,63 +245,81 @@ export default function Home() {
             <TabPane tab="Общие" key="1">
               <Row gutter={16}>
                 <Col span={12}>
-                  <Form.Item
-                    name="active"
-                    label="Активность"
-                    valuePropName="checked"
-                  >
-                    <Switch />
+                  <Form.Item name="status" label="Статус">
+                    <Select>
+                      <Option value={UserStatus.Active}>Активен</Option>
+                      <Option value={UserStatus.Blocked}>Заблокирован</Option>
+                      <Option value={UserStatus.Inactive}>Неактивен</Option>
+                    </Select>
                   </Form.Item>
                 </Col>
                 <Col span={12}>
-                  <Form.Item name="sort" label="Сортировка">
-                    <InputNumber />
-                  </Form.Item>
-                </Col>
-              </Row>
-              <Row gutter={16}>
-                <Col span={12}>
                   <Form.Item
-                    name="name"
-                    label="Название(RU)"
+                    name="username"
+                    label="Логин"
                     rules={[
-                      { required: true, message: "Просьба ввести название" },
+                      { required: true, message: "Просьба указать логин" },
                     ]}
                   >
-                    <Input placeholder="Просьба ввести название" />
+                    <Input />
+                  </Form.Item>
+                </Col>
+              </Row>
+              {!editingRecord && (
+                <Row gutter={16}>
+                  <Col span={12}>
+                    <Form.Item
+                      name="password"
+                      label="Пароль"
+                      rules={[
+                        { required: true, message: "Просьба указать пароль" },
+                      ]}
+                    >
+                      <Input.Password />
+                    </Form.Item>
+                  </Col>
+                </Row>
+              )}
+              <Row gutter={16}>
+                <Col span={12}>
+                  <Form.Item
+                    name="firstName"
+                    label="Имя"
+                    rules={[{ required: true, message: "Просьба ввести имя" }]}
+                  >
+                    <Input placeholder="Имя" />
                   </Form.Item>
                 </Col>
                 <Col span={12}>
                   <Form.Item
-                    name="name_uz"
-                    label="Название(UZ)"
-                    rules={[{ message: "Просьба ввести название" }]}
+                    name="lastName"
+                    label="Фамилия"
+                    rules={[{ message: "Просьба ввести фамилию" }]}
                   >
-                    <Input placeholder="Просьба ввести название" />
-                  </Form.Item>
-                </Col>
-              </Row>
-              <Row gutter={16}>
-                <Col span={24}>
-                  <Form.Item name="description" label="Описание(RU)">
-                    <TextArea rows={4} />
-                  </Form.Item>
-                </Col>
-              </Row>
-              <Row gutter={16}>
-                <Col span={24}>
-                  <Form.Item name="description_uz" label="Описание(UZ)">
-                    <TextArea rows={4} />
+                    <Input placeholder="Фамилия" />
                   </Form.Item>
                 </Col>
               </Row>
               <Row gutter={16}>
                 <Col span={12}>
-                  <Form.Item name="locale" label="Язык сайта">
-                    <Select>
-                      <Option value="">Выберите вариант</Option>
-                      <Option value="ru">Русский</Option>
-                      <Option value="uz">Узбекский</Option>
+                  <Form.Item
+                    name="roles"
+                    label="Роли"
+                    rules={[
+                      { required: true, message: "Просьба выбрать роли" },
+                    ]}
+                  >
+                    <Select
+                      mode="multiple"
+                      placeholder="Выберите роли"
+                      style={{ width: "100%" }}
+                    >
+                      {rolesData &&
+                        rolesData!.content.map((role: RoleResponse) => (
+                          <Option key={role.id} value={role.id}>
+                            {role.name}
+                          </Option>
+                        ))}
                     </Select>
                   </Form.Item>
                 </Col>
@@ -271,9 +328,22 @@ export default function Home() {
           </Tabs>
         </Form>
       </Drawer>
+      {error && (
+        <Alert
+          message="Error"
+          description={error.message}
+          type="error"
+          showIcon
+        />
+      )}
+      <div className="my-4">
+        <Button type="primary" onClick={addRecord}>
+          Добавить
+        </Button>
+      </div>
       <Table
         columns={columns}
-        dataSource={data}
+        dataSource={rows}
         loading={isLoading}
         rowKey="id"
         scroll={{ x: "calc(700px + 50%)" }}

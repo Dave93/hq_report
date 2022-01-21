@@ -1,6 +1,36 @@
 require("dotenv").config();
 import NextAuth from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
+import axios from "axios";
+import getConfig from "next/config";
+import { DateTime } from "luxon";
+import parse from "parse-duration";
+const { publicRuntimeConfig } = getConfig();
+let webAddress = publicRuntimeConfig.apiUrl;
+const refreshAccessToken = async (token) => {
+  const { data: user } = await axios.post(
+    `${webAddress}auth/token/refresh`,
+    {
+      refreshToken: token.refreshToken,
+    },
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token.accessToken}`,
+      },
+    }
+  );
+  console.log(user);
+  console.log(parse(user.payload.accessTokenExpires));
+  const { accessToken, refreshToken } = user.payload;
+  return {
+    ...token,
+    accessToken,
+    accessTokenExpires: Date.now() + parse(user.payload.accessTokenExpires),
+    refreshToken,
+  };
+};
 
 export default NextAuth({
   providers: [
@@ -25,18 +55,15 @@ export default NextAuth({
           password: credentials.password,
         };
 
-        const res = await fetch(
-          "https://report.hq.fungeek.net/api/v1/auth/login",
-          {
-            method: "POST",
-            body: JSON.stringify(payload),
-            headers: {
-              "Content-Type": "application/json",
-              tenant: credentials.tenantKey,
-              "Accept-Language": "en-US",
-            },
-          }
-        );
+        const res = await fetch(`${webAddress}auth/login`, {
+          method: "POST",
+          body: JSON.stringify(payload),
+          headers: {
+            "Content-Type": "application/json",
+            tenant: credentials.tenantKey,
+            "Accept-Language": "en-US",
+          },
+        });
 
         const user = await res.json();
         if (!res.ok) {
@@ -61,17 +88,29 @@ export default NextAuth({
     async jwt({ token, user, account }) {
       if (account && user) {
         const { accessToken, refreshToken } = user.payload.token;
+        const userData = user.payload.user;
+        const access = user.payload.access;
         return {
           ...token,
           accessToken,
           refreshToken,
+          accessTokenExpires:
+            Date.now() + parse(user.payload.accessTokenExpires),
+          user: userData,
+          access,
         };
       }
 
-      return token;
+      // Return previous token if the access token has not expired yet
+      if (Date.now() < token.exp) {
+        return token;
+      }
+      return refreshAccessToken(token);
     },
 
     async session({ session, token }) {
+      session.user = token.user;
+      session.access = token.access;
       session.user.accessToken = token.accessToken;
       session.user.refreshToken = token.refreshToken;
       session.user.accessTokenExpires = token.accessTokenExpires;
