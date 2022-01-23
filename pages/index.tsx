@@ -27,11 +27,13 @@ import { useEffect, useMemo, useState } from "react";
 import { EditOutlined } from "@ant-design/icons";
 import { useQuery } from "react-query";
 import { create, fetchAll, getAllRoles, updateById } from "@libs/users/index";
+import { fetchAll as fetchTerminals } from "@libs/terminals/index";
 import { UserStatus } from "@libs/types/user_status";
 import { User } from "@libs/types/user";
 import { ApiListResponse } from "@libs/types/api_list_response";
 import { RoleResponse } from "@libs/types/role_response";
 import { PermissionResponse } from "@libs/types/permissions_response";
+import { Terminal, TerminalResponse } from "@libs/types/terminal";
 
 export async function getServerSideProps(context: any) {
   const session = await getSession(context);
@@ -76,6 +78,12 @@ export default function Home() {
     isLoading: rolesIsLoading,
     error: rolesError,
   } = useQuery<ApiListResponse<RoleResponse>, Error>("roles_list", getAllRoles);
+
+  const {
+    data: terminalsData,
+    isLoading: terminalsIsLoading,
+    error: terminalsError,
+  } = useQuery<Terminal[], Error>("terminal_list", fetchTerminals);
 
   const closeDrawer = () => {
     setEditingRecord(null);
@@ -141,8 +149,6 @@ export default function Home() {
   useEffect(() => {
     // fetchData();
   });
-
-  console.log(error);
 
   const columns = [
     {
@@ -318,6 +324,24 @@ export default function Home() {
                         rolesData!.content.map((role: RoleResponse) => (
                           <Option key={role.id} value={role.id}>
                             {role.name}
+                          </Option>
+                        ))}
+                    </Select>
+                  </Form.Item>
+                </Col>
+                <Col span={12}>
+                  <Form.Item name="iiko_terminal_id" label="Филиал">
+                    <Select
+                      placeholder="Выберите роли"
+                      style={{ width: "100%" }}
+                    >
+                      {terminalsData &&
+                        terminalsData!.map((terminal: Terminal) => (
+                          <Option
+                            key={terminal.terminal_id}
+                            value={terminal.terminal_id}
+                          >
+                            {terminal.name}
                           </Option>
                         ))}
                     </Select>
