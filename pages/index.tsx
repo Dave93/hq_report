@@ -125,14 +125,9 @@ export default function Home() {
       );
       await create({
         ...values,
-        // permissions: [
-        //   [].concat
-        //     .apply(
-        //       [],
-        //       roles.map((role: RoleResponse) => role.permissions)
-        //     )
-        //     .map((perm: PermissionResponse) => perm.id),
-        // ],
+        permissions: Array.prototype
+          .concat(...roles.map((role: RoleResponse) => role.permissions))
+          .map((perm: PermissionResponse) => perm.id),
       });
     }
     setIsSubmittingForm(false);

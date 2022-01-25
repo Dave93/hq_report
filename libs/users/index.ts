@@ -1,12 +1,11 @@
 import axios from "axios";
 import getConfig from "next/config";
 import { useSession, signIn, signOut, getSession } from "next-auth/react";
-import { Session } from "@types/session";
 
 const { publicRuntimeConfig } = getConfig();
 let webAddress = publicRuntimeConfig.apiUrl;
 export const fetchAll = async () => {
-  const session: Session = await getSession();
+  const session: any = await getSession();
   let config = {
     headers: {
       Authorization: "Bearer " + session.user.accessToken,
@@ -17,7 +16,7 @@ export const fetchAll = async () => {
 };
 
 export const getAllRoles = async () => {
-  const session: Session = await getSession();
+  const session: any = await getSession();
   let config = {
     headers: {
       Authorization: "Bearer " + session.user.accessToken,
@@ -28,7 +27,7 @@ export const getAllRoles = async () => {
 };
 
 export const fetchById = async (id: string) => {
-  const session: Session = await getSession();
+  const session: any = await getSession();
   let config = {
     headers: {
       Authorization: "Bearer " + session.user.accessToken,
@@ -39,7 +38,7 @@ export const fetchById = async (id: string) => {
 };
 
 export const updateById = async (id: string, data: any) => {
-  const session: Session = await getSession();
+  const session: any = await getSession();
   let config = {
     headers: {
       Authorization: "Bearer " + session.user.accessToken,
@@ -54,10 +53,10 @@ export const updateById = async (id: string, data: any) => {
 };
 
 export const create = async (data: any) => {
-  const session: Session = await getSession();
+  const session: any = await getSession();
   let config = {
     headers: {
-      Authorization: "Bearer " + session.user.accessToken,
+      Authorization: "Bearer " + session!.user.accessToken,
     },
   };
   const { data: response } = await axios.post(
