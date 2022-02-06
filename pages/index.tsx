@@ -115,9 +115,15 @@ export default function Home() {
   const onFinish = async (values: any) => {
     setIsSubmittingForm(true);
     if (editingRecord) {
+      let roles = rolesData!.content!.filter((role: RoleResponse) =>
+        values.roles.includes(role.id)
+      );
       await updateById(editingRecord?.id, {
         ...editingRecord,
         ...values,
+        permissions: Array.prototype
+          .concat(...roles.map((role: RoleResponse) => role.permissions))
+          .map((perm: PermissionResponse) => perm.id),
       });
     } else {
       let roles = rolesData!.content!.filter((role: RoleResponse) =>
