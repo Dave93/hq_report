@@ -199,11 +199,6 @@ export default function Home() {
         return <Switch disabled defaultChecked={_} />;
       },
     },
-    {
-      title: "Бренд",
-      dataIndex: "project",
-      key: "project",
-    },
   ];
 
   const rows = useMemo(() => {

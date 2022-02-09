@@ -202,7 +202,7 @@ export default function Home() {
     {
       title: "Бренд",
       dataIndex: "project",
-      key: "project",
+      key: "lastName",
     },
   ];
 

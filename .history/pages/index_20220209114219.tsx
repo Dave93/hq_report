@@ -199,11 +199,6 @@ export default function Home() {
         return <Switch disabled defaultChecked={_} />;
       },
     },
-    {
-      title: "Бренд",
-      dataIndex: "project",
-      key: "project",
-    },
   ];
 
   const rows = useMemo(() => {
@@ -361,12 +356,15 @@ export default function Home() {
                       placeholder="Выберите роли"
                       style={{ width: "100%" }}
                     >
-                      <Option key="1" value="chopar">
-                        Chopar
-                      </Option>
-                      <Option key="2" value="les">
-                        Les Ailes
-                      </Option>
+                      {terminalsData &&
+                        terminalsData!.map((terminal: Terminal) => (
+                          <Option
+                            key={terminal.terminal_id}
+                            value={terminal.terminal_id}
+                          >
+                            {terminal.name}
+                          </Option>
+                        ))}
                     </Select>
                   </Form.Item>
                 </Col>
