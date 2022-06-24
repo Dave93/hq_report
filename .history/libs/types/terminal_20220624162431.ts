@@ -23,7 +23,6 @@ export interface Terminal {
   location: Location;
   latitude: string;
   longitude: string;
-  project: string;
 }
 
 export interface Location {
