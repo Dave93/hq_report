@@ -85,6 +85,8 @@ export default function Home() {
     error: terminalsError,
   } = useQuery<Terminal[], Error>("terminal_list", fetchTerminals);
 
+  console.log(terminalsData)
+
   const closeDrawer = () => {
     setEditingRecord(null);
     setDrawer(false);
@@ -198,6 +200,11 @@ export default function Home() {
       render: (_: any) => {
         return <Switch disabled defaultChecked={_} />;
       },
+    },
+    {
+      title: "Бренд",
+      dataIndex: "project",
+      key: "project",
     },
   ];
 
@@ -356,15 +363,12 @@ export default function Home() {
                       placeholder="Выберите роли"
                       style={{ width: "100%" }}
                     >
-                      {terminalsData &&
-                        terminalsData!.map((terminal: Terminal) => (
-                          <Option
-                            key={terminal.terminal_id}
-                            value={terminal.terminal_id}
-                          >
-                            {terminal.name}
-                          </Option>
-                        ))}
+                      <Option key="1" value="chopar">
+                        Chopar
+                      </Option>
+                      <Option key="2" value="les">
+                        Les Ailes
+                      </Option>
                     </Select>
                   </Form.Item>
                 </Col>

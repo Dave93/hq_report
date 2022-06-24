@@ -347,7 +347,7 @@ export default function Home() {
                             key={terminal.terminal_id}
                             value={terminal.terminal_id}
                           >
-                            {terminal.name}
+                            {terminal.project} : {terminal.name}
                           </Option>
                         ))}
                     </Select>

@@ -199,6 +199,11 @@ export default function Home() {
         return <Switch disabled defaultChecked={_} />;
       },
     },
+    {
+      title: "Бренд",
+      dataIndex: "project",
+      key: "project",
+    },
   ];
 
   const rows = useMemo(() => {
@@ -342,7 +347,7 @@ export default function Home() {
                             key={terminal.terminal_id}
                             value={terminal.terminal_id}
                           >
-                            {terminal.name}
+                            {terminal.project}  {terminal.name}
                           </Option>
                         ))}
                     </Select>
@@ -351,20 +356,17 @@ export default function Home() {
               </Row>
               <Row>
                 <Col span={12}>
-                  <Form.Item name="project" label="Филиал">
+                  <Form.Item name="project" label="Бренд">
                     <Select
                       placeholder="Выберите роли"
                       style={{ width: "100%" }}
                     >
-                      {terminalsData &&
-                        terminalsData!.map((terminal: Terminal) => (
-                          <Option
-                            key={terminal.terminal_id}
-                            value={terminal.terminal_id}
-                          >
-                            {terminal.name}
-                          </Option>
-                        ))}
+                      <Option key="1" value="chopar">
+                        Chopar
+                      </Option>
+                      <Option key="2" value="les">
+                        Les Ailes
+                      </Option>
                     </Select>
                   </Form.Item>
                 </Col>

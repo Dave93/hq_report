@@ -199,6 +199,11 @@ export default function Home() {
         return <Switch disabled defaultChecked={_} />;
       },
     },
+    {
+      title: "Бренд",
+      dataIndex: "project",
+      key: "project",
+    },
   ];
 
   const rows = useMemo(() => {
@@ -342,7 +347,7 @@ export default function Home() {
                             key={terminal.terminal_id}
                             value={terminal.terminal_id}
                           >
-                            {terminal.name}
+                            {terminal.project}:{terminal.name}
                           </Option>
                         ))}
                     </Select>
